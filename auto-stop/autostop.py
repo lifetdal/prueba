@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: MIT-0
 
-from datetime import datetime
+from datetime import datetime, time
 import os
 import getopt, sys
 import json
@@ -200,14 +200,14 @@ if __name__ == '__main__':
     # Usage info
     usage_info = """Usage:
     This script auto stops Studio JupyterLab if, it is idle for X seconds or if it is scheduled. It'll stop it:
-    python autostop.py --idle-time <time_in_seconds> [--datetime <time_delta_with_arguments>] [--port <jupyter_port>] [--hostname <jupyter_hostname>] [--base-url <jupyter_base_url>] [--ignore-connections <True|False>] [--skip-terminals <True|False>] [--state-file-path <state_file_path>]
+    python autostop.py --idle-time <time_in_seconds> [--datetime <date_time_with_arguments>] [--port <jupyter_port>] [--hostname <jupyter_hostname>] [--base-url <jupyter_base_url>] [--ignore-connections <True|False>] [--skip-terminals <True|False>] [--state-file-path <state_file_path>]
     Type "python autostop.py -h" for the available options.
     """
     # Help info
     help_info = """    -t, --idle-time
         idle time in seconds
     -d, --datetime
-        Time delta with arguments: days, seconds, milliseconds, minutes, hours, etc.
+        date time with arguments: year, month, day, hours, and minutes.
     -p, --port
         jupyter port
     -k, --hostname
@@ -226,6 +226,8 @@ if __name__ == '__main__':
 
     # Setting default values.
     idle_time = None
+    delta = None
+    any_day_at_time = None
     hostname = "0.0.0.0"
     base_url = "/jupyterlab/default/"
     port = 8888
@@ -246,12 +248,19 @@ if __name__ == '__main__':
                 idle_time = int(arg)
             elif opt in ("-d", "--datetime"):
                 values = arg.replace('"', '').split(",")
-                delta = datetime(
-                     int(values[0].split("=")[1]),
-                     int(values[1].split("=")[1]),
-                     int(values[2].split("=")[1]),
-                     int(values[3].split("=")[1]),
-                     int(values[4].split("=")[1]))
+                if len(values) == 2:
+                    if ('hours' in values[0].split("=")[0]) and ('minutes' in values[1].split("=")[0]):
+                        any_day_at_time = time(int(values[0].split("=")[1]), int(values[1].split("=")[1]))
+                    else:
+                        print("Datetime not configured correctly.")
+                        exit(0)
+                else:
+                    delta = datetime(
+                         int(values[0].split("=")[1]),
+                         int(values[1].split("=")[1]),
+                         int(values[2].split("=")[1]),
+                         int(values[3].split("=")[1]),
+                         int(values[4].split("=")[1]))
             elif opt in ("-p", "--port"):
                 port = str(arg)
             elif opt in ("-k", "--hostname"):
@@ -268,7 +277,6 @@ if __name__ == '__main__':
         print(usage_info)
         exit(1)
 
-
     if idle_time:
         try:
             app_url = f"http://{hostname}:{port}"
@@ -283,11 +291,20 @@ if __name__ == '__main__':
         except Exception as e:
             log_message(f"[auto-stop-idle] - An error accurred while checking idle state. Exception: {e}")
     elif delta:
-        print("Time programmed: ", delta)
+        print("Datetime programmed: ", delta)
         now = datetime.now()
         time_left = delta - now
         seconds_left = time_left.total_seconds()
         if seconds_left <= 0:
+            log_message("[auto-stop] - JupyterLab App must stop, since the scheduled datetime is reached.")
+            delete_app()
+        else:
+            log_message("[auto-stop] - JupyterLab has not reached the scheduled datetime. Passing check.")
+            exit(0)
+    elif any_day_at_time:
+        print("Time programmed: ", any_day_at_time)
+        now = datetime.now()
+        if now.time() >= any_day_at_time:
             log_message("[auto-stop] - JupyterLab App must stop, since the scheduled time is reached.")
             delete_app()
         else:
