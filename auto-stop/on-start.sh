@@ -12,8 +12,10 @@ ASI_VERSION=0.3.1
 #   2. The Studio Domain or User Profile execution role has permissions to SageMaker:DeleteApp to delete the JupyterLab app
 
 # User variables [update as needed]
-IDLE_TIME_IN_SECONDS=3600       # The max time (in seconds) the JupyterLab app can stay idle before being terminated.
-DATE_TIME="year=2024,month=12,day=10,hours=0,minutes=30"
+# The max time (in seconds) the JupyterLab app can stay idle before being terminated.
+IDLE_TIME_IN_SECONDS=3600
+# The scheduled datetime/time to reach before being terminated. "year=2024,month=12,day=10,hours=0,minutes=30"
+DATE_TIME="hours=23,minutes=30" 
 # User variables - advanced [update only if needed]
 IGNORE_CONNECTIONS=True         # Set to False if you want to consider idle JL sessions with active connections as not idle.
 SKIP_TERMINALS=False            # Set to True if you want to skip any idleness check on Jupyter terminals.
@@ -26,7 +28,7 @@ CONDA_HOME=/opt/conda/bin
 LOG_FILE=/var/log/apps/app_container.log # Writing to app_container.log delivers logs to CW logs.
 SOLUTION_DIR=/var/tmp/auto-stop # Do not use /home/sagemaker-user
 STATE_FILE=$SOLUTION_DIR/autostop.st
-PYTHON_PACKAGE=sagemaker_studio_jlab_auto_stop_idle-$ASI_VERSION.tar.gz
+#PYTHON_PACKAGE=sagemaker_studio_jlab_auto_stop_idle-$ASI_VERSION.tar.gz
 PYTHON_SCRIPT_PATH=$SOLUTION_DIR/autostop.py
 
 # Issue - https://github.com/aws-samples/sagemaker-studio-apps-lifecycle-config-examples/issues/12
@@ -56,12 +58,9 @@ cd $SOLUTION_DIR
 # Downloading autostop idle Python package.
 echo "Downloading autostop idle Python package..."
 #curl -LO --output-dir /var/tmp/ https://github.com/aws-samples/sagemaker-studio-apps-lifecycle-config-examples/releases/download/v$ASI_VERSION/$PYTHON_PACKAGE
-
 #sudo $CONDA_HOME/pip install -U -t $SOLUTION_DIR /var/tmp/$PYTHON_PACKAGE
 
-#sudo wget https://raw.githubusercontent.com/lifetdal/prueba/refs/heads/main/auto-stop/autostop.py --no-check-certificate
-
-sudo wget https://raw.githubusercontent.com/lifetdal/prueba/refs/heads/main/auto-stop/autostop.py --no-check-certificate
+sudo wget https://raw.githubusercontent.com/hdi-analytics/migracao-aws-hdi/refs/heads/main/auto-stop/autostop.py --no-check-certificate
 
 # Setting container credential URI variable to /etc/environment to make it available to cron
 sudo /bin/bash -c "echo 'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI=$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' >> /etc/environment"
